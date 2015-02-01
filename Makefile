@@ -184,3 +184,7 @@ bin/dtc:
 	cp arch/arm/boot/dts/socfpga_cyclone5_sockit.dtb ../imagefiles/; \
 	cp -fv scripts/dtc/dtc ../bin/dtc)
 
+boot-partition.img:
+	cat imagefiles/preloader-mkpimage-sockit.bin \
+	    imagefiles/altera/14.1/embedded/examples/hardware/cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/u-boot.img \
+	    >boot-partition.img
