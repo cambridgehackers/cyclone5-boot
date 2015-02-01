@@ -188,3 +188,39 @@ boot-partition.img:
 	cat imagefiles/preloader-mkpimage-sockit.bin \
 	    imagefiles/altera/14.1/embedded/examples/hardware/cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/u-boot.img \
 	    >boot-partition.img
+
+write-boot-mac:
+	#fdisk /dev/disk1
+	#dd if=boot-partition.img of=/dev/disk1s1 bs=64k; sync
+
+#To format sdcard:
+# Make >2 partitions:
+#  Partition 1 must be FAT
+#  Another partition can start as FAT and then be modified with fdisk to be "id == 0xa2":
+#      fdisk -e /dev/rdisk1
+#      print
+#      edit 1
+#      Partition id ('0' to disable)  [0 - FF]: [B] (? for help) a2
+#      Do you wish to edit in CHS mode? [n] 
+#      Partition offset [0 - 7744512]: [63] 
+#      Partition size [1 - 7744449]: [7744449] 19536
+#      print
+#      write
+#      quit
+
+#/scratch/altera/14.1/embedded/embedded_command_shell.sh
+SOCEDS_DEST_ROOT ?= /scratch/altera/14.1/embedded/
+export SOCEDS_DEST_ROOT
+PATH := $(SOCEDS_DEST_ROOT)/host_tools/mentor/gnu/arm/baremetal/bin:$(SOCEDS_DEST_ROOT)/host_tools/altera/mkpimage:$(PATH)
+export PATH
+
+BSP-CREATE ?= $(SOCEDS_DEST_ROOT)/host_tools/altera/preloadergen/bsp-create-settings
+
+#imagefiles/preloader-mkpimage-sockit.bin
+preloader:
+	$(BSP-CREATE) --type spl --bsp-dir build \
+	  --preloader-settings-dir \
+	  ../import_components/arrow/SoCKIT_Materials_14.0/SoCkit/SoCkit_SW_lab_14.0/hps_isw_handoff/soc_system_hps_0 \
+	  --settings build/settings.bsp --set spl.boot.WATCHDOG_ENABLE false
+	cd build; make
+	cp build/preloader-mkpimage.bin imagefiles/preloader-mkpimage-sockit.bin
