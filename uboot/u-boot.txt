@@ -18,7 +18,7 @@ mmc rescan
 fatload mmc 0:1 ${loadaddr} zImage
 fatload mmc 0:1 ${fdtaddr} socfpga.dtb
 mw $fpgaintf ${fpgaintf_handoff}
-go $fpga2sdram_apply
+#go $fpga2sdram_apply
 mw $fpga2sdram ${fpga2sdram_handoff}
 mw $axibridge ${axibridge_handoff}
 mw $l3remap ${l3remap_handoff} 
