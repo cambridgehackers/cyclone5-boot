@@ -1,18 +1,18 @@
 
-setenv axibridge=ffd0501c
-setenv axibridge_handoff=0x00000000
-setenv loadaddr=0x8000
-setenv bootimagesize=0x600000
-setenv fdtaddr=0x00000100
-setenv fdtimagesize=0x5000
-setenv fpga2sdram=ffc25080
-setenv fpga2sdram_apply=3ff7d524
-setenv fpga2sdram_handoff=0x00000000
-setenv fpgaintf=ffd08028
-setenv fpgaintf_handoff=0x00000000
-setenv l3remap=ff800000
-setenv l3remap_handoff=0x00000019
-setenv setenv_ethaddr_eeprom=3ff9cfc9
+setenv axibridge ffd0501c
+setenv axibridge_handoff 0x00000000
+setenv loadaddr 0x8000
+setenv bootimagesize 0x600000
+setenv fdtaddr 0x00000100
+setenv fdtimagesize 0x5000
+setenv fpga2sdram ffc25080
+setenv fpga2sdram_apply 3ff7d524
+setenv fpga2sdram_handoff 0x00000000
+setenv fpgaintf ffd08028
+setenv fpgaintf_handoff 0x00000000
+setenv l3remap ff800000
+setenv l3remap_handoff 0x00000019
+setenv setenv_ethaddr_eeprom 3ff9cfc9
 
 mmc rescan
 fatload mmc 0:1 ${loadaddr} zImage
