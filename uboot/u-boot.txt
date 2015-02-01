@@ -1,10 +1,12 @@
 
-setenv axibridge ffd0501c
-setenv axibridge_handoff 0x00000000
+setenv quiet no
 setenv loadaddr 0x8000
 setenv bootimagesize 0x600000
 setenv fdtaddr 0x00000100
 setenv fdtimagesize 0x5000
+
+setenv axibridge ffd0501c
+setenv axibridge_handoff 0x00000000
 setenv fpga2sdram ffc25080
 setenv fpga2sdram_apply 3ff7d524
 setenv fpga2sdram_handoff 0x00000000
@@ -22,5 +24,5 @@ mw $fpgaintf ${fpgaintf_handoff}
 mw $fpga2sdram ${fpga2sdram_handoff}
 mw $axibridge ${axibridge_handoff}
 mw $l3remap ${l3remap_handoff} 
-setenv bootargs console=ttyS0,115200 root=/dev/mmcblk0p2 rw rootwait
+setenv bootargs console=ttyS0,115200 root=/dev/mmcblk0p2 rw rootwait verbose
 bootz ${loadaddr} - ${fdtaddr}
