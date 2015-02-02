@@ -23,11 +23,10 @@ DELETE_TEMP_FILES=1
 
 CROSS_GCC=/scratch/altera/gcc-linaro-arm-linux-gnueabihf-4.7-2012.11-20121123_linux/bin/arm-linux-gnueabihf-
 
-targetnames = bootbin sdcard all zImage
+targetnames = sdcard all zImage
 
 all:
 	@echo "Please type one of the following:"
-	@echo "    make bootbin.sockit"
 	@echo "    make sdcard.sockit"
 	@echo "    make zImage.sockit"
 	@echo "    make all.sockit"
@@ -62,7 +61,7 @@ sockit-adb:
 # zz
 #################################################################################################
 
-real.all: real.bootbin real.sdcard
+real.all: real.sdcard
 
 clean:
 	## '"make realclean" to remove downloaded files
@@ -70,14 +69,6 @@ clean:
 
 realclean: clean
 	rm -fr filesystems/*
-
-real.bootbin: zcomposite.elf imagefiles/zynq_$(BOARD)_fsbl.elf xbootgen reserved_for_interrupts.tmp
-	if [ -f boot.bin ]; then mv -v boot.bin boot.bin.bak; fi
-	cp -f imagefiles/zynq_$(BOARD)_fsbl.elf zynq_fsbl.elf
-	./xbootgen zynq_fsbl.elf zcomposite.elf
-ifeq ($(DELETE_TEMP_FILES),1)
-	rm -f zynq_fsbl.elf zcomposite.elf reserved_for_interrupts.tmp
-endif
 
 # daffodil's sockit uses this macaddress: 00:e0:0c:00:98:03 
 dtswork.tmp:
@@ -95,21 +86,6 @@ ifeq ($(DELETE_TEMP_FILES),1)
 	rm -f dtswork.tmp
 endif
 
-zcomposite.elf: ramdisk dtb.tmp
-	echo "******** PRINT GCC CONFIGURE OPTIONS *******"
-	$(PREFIX)gcc -v 2>&1
-	$(PREFIX)objcopy -I binary -B arm -O elf32-littlearm imagefiles/zImage z.tmp
-	$(PREFIX)objcopy -I binary -B arm -O elf32-littlearm ramdisk.image.gz r.tmp
-	$(PREFIX)objcopy -I binary -B arm -O elf32-littlearm dtb.tmp d.tmp
-	$(PREFIX)gcc -c clearreg.S
-	$(PREFIX)ld -z noexecstack -Ttext 0 -e 0 -o c.tmp clearreg.o
-	$(PREFIX)objcopy -I elf32-littlearm -O binary c.tmp c1.tmp
-	$(PREFIX)objcopy -I binary -B arm -O elf32-littlearm c1.tmp c.tmp
-	$(PREFIX)ld -e 0x1008000 -z max-page-size=0x8000 -o zcomposite.elf --script zynq_linux_boot.lds r.tmp d.tmp c.tmp z.tmp
-ifeq ($(DELETE_TEMP_FILES),1)
-	rm -f z.tmp r.tmp d.tmp c.tmp c1.tmp clearreg.o ramdisk.image.gz dtb.tmp
-endif
-
 canoncpio: canoncpio.c
 	gcc -o canoncpio canoncpio.c
 
@@ -122,9 +98,6 @@ ifeq ($(DELETE_TEMP_FILES),1)
 	rm -f ramdisk.image.temp ramdisk.image.temp1
 endif
 
-xbootgen: xbootgen.c Makefile
-	gcc -g -o xbootgen xbootgen.c
-
 real.zImage: bin/dtc
 	cp linux-xlnx/arch/arm/boot/zImage imagefiles/zImage
 
@@ -133,13 +106,7 @@ real.sdcard: sdcard-$(BOARD)/system.img sdcard-$(BOARD)/userdata.img sdcard-$(BO
 	[ -e sdcard-$(BOARD)/$(KERNELID) ] || mkdir sdcard-$(BOARD)/$(KERNELID)
 	echo "Files for $(BOARD) SD Card are in $(PWD)/sdcard-$(BOARD)"
 
-.PHONY: real.sdcard real.bootbin real.all real.zImage
-
-sdcard-$(BOARD)/boot.bin:
-	mkdir -p sdcard-$(BOARD)
-	rm -f boot.bin
-	make BOARD=$(BOARD) real.bootbin
-	mv boot.bin sdcard-$(BOARD)/boot.bin
+.PHONY: real.sdcard real.all real.zImage
 
 filesystems/system-130710.img.bz2:
 	mkdir -p filesystems
@@ -190,21 +157,20 @@ boot-partition.img:
 	    >boot-partition.img
 
 write-boot-mac:
-	#fdisk /dev/disk1
-	#dd if=boot-partition.img of=/dev/disk1s1 bs=64k; sync
+	#fdisk /dev/disk2
+	#dd if=boot-partition.img of=/dev/disk2s2 bs=64k; sync
 
 #To format sdcard:
 # Make >2 partitions:
 #  Partition 1 must be FAT
-#  Another partition can start as FAT and then be modified with fdisk to be "id == 0xa2":
-#      fdisk -e /dev/rdisk1
+#  Another partition starts as FAT, then modified with fdisk to be 0xa2
+#
+#  Modifying with fdisk to be "id == 0xa2":
+#      fdisk -e /dev/rdisk2
 #      print
-#      edit 1
+#      edit 2
 #      Partition id ('0' to disable)  [0 - FF]: [B] (? for help) a2
-#      Do you wish to edit in CHS mode? [n] 
-#      Partition offset [0 - 7744512]: [63] 
-#      Partition size [1 - 7744449]: [7744449] 19536
-#      print
+#      (then hit enter 3 times)
 #      write
 #      quit
 
@@ -224,3 +190,7 @@ preloader:
 	  --settings build/settings.bsp --set spl.boot.WATCHDOG_ENABLE false
 	cd build; make
 	cp build/preloader-mkpimage.bin imagefiles/preloader-mkpimage-sockit.bin
+
+copyfiles:
+	cp imagefiles/u-boot.scr imagefiles/socfpga.dtb imagefiles/zImage /Volumes/SOCKIT/
+	sync
