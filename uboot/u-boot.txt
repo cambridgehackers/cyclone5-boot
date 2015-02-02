@@ -4,11 +4,13 @@ setenv loadaddr 0x8000
 setenv bootimagesize 0x600000
 setenv fdtaddr 0x00000100
 setenv fdtimagesize 0x7000
+setenv ramdiskaddr 0x00800000
 
 setenv setenv_ethaddr_eeprom 3ff9abe9
 
 mmc rescan
 fatload mmc 0:1 ${loadaddr} zImage
 fatload mmc 0:1 ${fdtaddr} socfpga.dtb
-setenv bootargs console=ttyS0,115200 root=/dev/mmcblk0p2 rw rootwait verbose
+fatload mmc 0:1 ${ramdiskaddr} ramdisk.image.gz
+setenv bootargs console=ttyS0,115200 initrd=${ramdiskaddr},256K noinitrd init=/init root=/dev/ram rw ip=:::::eth0:dhcp earlyprintk
 bootz ${loadaddr} - ${fdtaddr}

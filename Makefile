@@ -47,7 +47,6 @@ sockit-adb:
 	adb connect $(RUNPARAM)
 	adb -s $(RUNPARAM):5555 shell rm -rf /mnt/sdcard/3.9.0-00054-g7b6edac
 	adb -s $(RUNPARAM):5555 shell mkdir /mnt/sdcard/3.9.0-00054-g7b6edac
-	adb -s $(RUNPARAM):5555 push sdcard-sockit/boot.bin   /mnt/sdcard
 	adb -s $(RUNPARAM):5555 push sdcard-sockit/portalmem.ko    /mnt/sdcard
 	adb -s $(RUNPARAM):5555 push sdcard-sockit/system.img    /mnt/sdcard
 	adb -s $(RUNPARAM):5555 push sdcard-sockit/timelimit    /mnt/sdcard
@@ -65,7 +64,7 @@ real.all: real.sdcard
 
 clean:
 	## '"make realclean" to remove downloaded files
-	rm -fr sdcard-* boot.bin *.tmp *.elf *.gz *.hex *.o foo.map xbootgen canoncpio
+	rm -fr sdcard-* *.tmp *.elf *.gz *.hex *.o foo.map xbootgen canoncpio
 
 realclean: clean
 	rm -fr filesystems/*
@@ -80,7 +79,7 @@ endif
 
 # if [ -f $(DTC) ]; then echo $(DTC); else make $(DTC); fi
 INVOKE_DTC = $(DTC) -I dts -O dtb -o dtb.tmp dtswork.tmp
-dtb.tmp: imagefiles/zynq-$(BOARD)-portal.dts dtswork.tmp
+dtb.tmp: imagefiles/cyclone5-$(BOARD)-portal.dts dtswork.tmp
 	$(INVOKE_DTC) || make $(DTC); $(INVOKE_DTC)
 ifeq ($(DELETE_TEMP_FILES),1)
 	rm -f dtswork.tmp
@@ -101,7 +100,7 @@ endif
 real.zImage: bin/dtc
 	cp linux-xlnx/arch/arm/boot/zImage imagefiles/zImage
 
-real.sdcard: sdcard-$(BOARD)/system.img sdcard-$(BOARD)/userdata.img sdcard-$(BOARD)/boot.bin
+real.sdcard: sdcard-$(BOARD)/system.img sdcard-$(BOARD)/userdata.img
 	cp -v imagefiles/zynqportal.ko imagefiles/portalmem.ko imagefiles/timelimit sdcard-$(BOARD)/
 	[ -e sdcard-$(BOARD)/$(KERNELID) ] || mkdir sdcard-$(BOARD)/$(KERNELID)
 	echo "Files for $(BOARD) SD Card are in $(PWD)/sdcard-$(BOARD)"
