@@ -1,5 +1,6 @@
 #
 OS := $(shell uname)
+BOARD = sockit
 
 #NDKPATH=/scratch/android-ndk-r9d/
 # NDK_OBJDUMP=$(shell $(NDKPATH)ndk-which objdump)
@@ -72,9 +73,9 @@ realclean: clean
 # daffodil's sockit uses this macaddress: 00:e0:0c:00:98:03 
 dtswork.tmp:
 ifdef DAFFODIL
-	sed s/73/98/ <imagefiles/zynq-$(BOARD)-portal.dts >dtswork.tmp
+	sed s/73/98/ <imagefiles/sockit-$(BOARD)-portal.dts >dtswork.tmp
 else
-	macbyte=`echo $(USER)$(BOARD) | $(MD5PROG) | cut -c 1-2`; sed s/73/$$macbyte/ <imagefiles/zynq-$(BOARD)-portal.dts >dtswork.tmp
+	macbyte=`echo $(USER)$(BOARD) | $(MD5PROG) | cut -c 1-2`; sed s/73/$$macbyte/ <imagefiles/sockit-$(BOARD)-portal.dts >dtswork.tmp
 endif
 
 # if [ -f $(DTC) ]; then echo $(DTC); else make $(DTC); fi
@@ -89,10 +90,11 @@ canoncpio: canoncpio.c
 	gcc -o canoncpio canoncpio.c
 
 ramdisk: canoncpio
+	mkdir -p sdcard-$(BOARD)
 	chmod 644 data/*.rc data/*.prop
 	cd data; (find . -name unused -o -print | sort | cpio -H newc -o >../ramdisk.image.temp1)
 	./canoncpio < ramdisk.image.temp1 | gzip -9 -n >ramdisk.image.temp
-	cat ramdisk.image.temp /dev/zero | dd of=ramdisk.image.gz count=256 ibs=1024
+	cat ramdisk.image.temp /dev/zero | dd of=sdcard-$(BOARD)/ramdisk.image.gz count=256 ibs=1024
 ifeq ($(DELETE_TEMP_FILES),1)
 	rm -f ramdisk.image.temp ramdisk.image.temp1
 endif
@@ -137,10 +139,11 @@ endif
 # wget https://launchpad.net/linaro-toolchain-binaries/trunk/2012.11/+download/gcc-linaro-arm-linux-gnueabihf-4.7-2012.11-20121123_linux.tar.bz2
 # tar xjf gcc-linaro-arm-linux-gnueabihf-4.7-2012.11-20121123_linux.tar.bz2
 # export CROSS_COMPILE=~/gcc-linaro-arm-linux-gnueabihf-4.7-2012.11-20121123_linux/bin/arm-linux-gnueabihf-
+#mirrored at: git@github.com:redrocketcomputing/linux-socfpga.git
 bin/dtc:
 	if [ -d linux-socfpga ]; then true; else git clone git://git.rocketboards.org/linux-socfpga.git; fi
 	(cd linux-socfpga; \
-	git checkout remotes/origin/rel_13.02_RC10 -b rel_13.02_RC10; \
+	git checkout remotes/origin/socfpga-3.10-ltsi -b socfpga-3.10-ltsi; \
 	export CROSS_COMPILE=$(CROSS_GCC); \
 	make ARCH=arm CROSS_COMPILE=$(CROSS_GCC) $(MACHEADERS) socfpga_defconfig; \
 	make ARCH=arm CROSS_COMPILE=$(CROSS_GCC) $(MACHEADERS) -j8 uImage LOADADDR=0x8000; \
@@ -150,10 +153,10 @@ bin/dtc:
 	cp arch/arm/boot/dts/socfpga_cyclone5_sockit.dtb ../imagefiles/; \
 	cp -fv scripts/dtc/dtc ../bin/dtc)
 
-boot-partition.img:
-	cat imagefiles/preloader-mkpimage-sockit.bin \
-	    imagefiles/altera/14.1/embedded/examples/hardware/cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/u-boot.img \
-	    >boot-partition.img
+#UBOOTIMG = imagefiles/altera/14.1/embedded/examples/hardware/cv_soc_devkit_ghrd/software/preloader/uboot-socfpga/u-boot.img
+UBOOTIMG = build/uboot-socfpga/u-boot.img
+boot-partition.img: imagefiles/preloader-mkpimage-sockit.bin $(UBOOTIMG)
+	cat imagefiles/preloader-mkpimage-sockit.bin $(UBOOTIMG) >boot-partition.img
 
 write-boot-mac:
 	#fdisk /dev/disk2
@@ -187,8 +190,9 @@ preloader:
 	  --preloader-settings-dir \
 	  ../import_components/arrow/SoCKIT_Materials_14.0/SoCkit/SoCkit_SW_lab_14.0/hps_isw_handoff/soc_system_hps_0 \
 	  --settings build/settings.bsp --set spl.boot.WATCHDOG_ENABLE false
-	cd build; make
+	make -C build
 	cp build/preloader-mkpimage.bin imagefiles/preloader-mkpimage-sockit.bin
+	make -C build uboot
 
 copyfiles:
 	cp imagefiles/u-boot.scr imagefiles/socfpga.dtb imagefiles/zImage /Volumes/SOCKIT/
